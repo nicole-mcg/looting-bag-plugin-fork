@@ -1,4 +1,4 @@
-package com.lootingbag;
+package com.looting_bag_plugin;
 
 import java.util.Arrays;
 import java.util.HashSet;

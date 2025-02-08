@@ -1,4 +1,4 @@
-package com.lootingbag;
+package com.looting_bag_plugin;
 
 import net.runelite.client.RuneLite;
 import net.runelite.client.externalplugins.ExternalPluginManager;

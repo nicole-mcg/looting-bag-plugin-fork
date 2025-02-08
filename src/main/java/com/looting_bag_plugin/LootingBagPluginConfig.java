@@ -1,13 +1,13 @@
-package com.lootingbag;
+package com.looting_bag_plugin;
 
-import static com.lootingbag.LootingBagConfig.CONFIG_GROUP;
+import static com.looting_bag_plugin.LootingBagPluginConfig.CONFIG_GROUP;
 import java.awt.Color;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 
 @ConfigGroup(CONFIG_GROUP)
-public interface LootingBagConfig extends Config
+public interface LootingBagPluginConfig extends Config
 {
 	String CONFIG_GROUP = "lootingbagvalue";
 	String priceKey = "priceType";
