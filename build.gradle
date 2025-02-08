@@ -23,7 +23,7 @@ dependencies {
 	testImplementation group: 'net.runelite', name:'jshell', version: runeLiteVersion
 }
 
-group = 'com.lootingbag'
+group = 'com.looting_bag_plugin'
 version = '2.1.0'
 sourceCompatibility = '1.8'
 

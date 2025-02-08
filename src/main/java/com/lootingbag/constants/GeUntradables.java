@@ -1,4 +1,4 @@
-package com.lootingbag;
+package com.lootingbag.constants;
 
 import java.util.Arrays;
 import java.util.HashSet;

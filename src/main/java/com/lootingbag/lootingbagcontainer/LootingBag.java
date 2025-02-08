@@ -1,10 +1,12 @@
-package com.lootingbag;
+package com.lootingbag.lootingbagcontainer;
 
 import com.google.common.collect.ImmutableSet;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+
+import com.lootingbag.constants.GeUntradables;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
@@ -13,21 +15,27 @@ import net.runelite.api.ItemContainer;
 import net.runelite.api.Varbits;
 import net.runelite.client.game.ItemManager;
 
+import com.google.inject.Inject;
+import javax.inject.Singleton;
+
 @Slf4j
+@Singleton
 public class LootingBag
 {
 	private static final int LOOTING_BAG_SIZE = 28;
 
 	private static final Set<Integer> FEROX_REGION = ImmutableSet.of(12600, 12344);
 
-	private final ItemManager itemManager;
+	@Inject
+	private Client client;
 
-	private final Client client;
+	@Inject
+	private ItemManager itemManager;
 
-	private final Map<Integer, Integer> items;
+	private final Map<Integer, Integer> items = new HashMap<>();
 
 	@Getter
-	private boolean isSynced;
+	private boolean isSynced = false;
 
 	@Getter
 	private boolean isQuantityOfItemsAccurate = true;
@@ -35,24 +43,17 @@ public class LootingBag
 	@Getter
 	private long valueOfItems = 0;
 
-	public LootingBag(Client client, ItemManager itemManager)
-	{
-		this.client = client;
-		this.itemManager = itemManager;
-		this.items = new HashMap<>();
-		this.isSynced = false;
-	}
-
 	public void addItem(
-			int itemId,
-			int quantity) {
+		final int itemId,
+		final int quantity
+	) {
 		addItem(itemId, quantity, true);
 	}
 
 	public void addItem(
-			int itemId,
-			int quantity,
-			boolean isQuantityConfirmed) {
+            final int itemId,
+            final int quantity,
+            final boolean isQuantityConfirmed) {
 
 		// Check that we can deposit any item into looting bag
 		// 		E.g. We're in the wilderness
@@ -67,7 +68,7 @@ public class LootingBag
 			return;
 		}
 
-		ItemComposition itemComposition = itemManager.getItemComposition(itemId);
+		final ItemComposition itemComposition = itemManager.getItemComposition(itemId);
 
 		// Check that we have room in the looting bag
 		if (getFreeSlots() == 0
@@ -95,7 +96,7 @@ public class LootingBag
 				).sum();
 	}
 
-	public void syncItems(ItemContainer lootingBagContainer) {
+	public void syncItems(final ItemContainer lootingBagContainer) {
 		items.clear();
 
 		// The looting bag container will be null when it is empty
@@ -122,13 +123,13 @@ public class LootingBag
 		isSynced = true;
 	}
 
-	private boolean canItemGoInLootingBag(int itemId) {
+	private boolean canItemGoInLootingBag(final int itemId) {
 		return isItemTradeable(itemId)
 			|| isItemTradeable(itemManager.getItemComposition(itemId).getLinkedNoteId());
 	}
 
-	private boolean isItemTradeable(int itemId) {
-		ItemComposition itemComposition = itemManager.getItemComposition(itemId);
+	private boolean isItemTradeable(final int itemId) {
+		final ItemComposition itemComposition = itemManager.getItemComposition(itemId);
 
 		return itemComposition.isTradeable() // GE tradeable items
 			|| itemComposition.getName().matches("Ensouled [a-z]+ head")
@@ -147,7 +148,7 @@ public class LootingBag
 			.sum();
 	}
 
-	private long getPriceOfItem(int itemId, int quantity) {
+	private long getPriceOfItem(final int itemId, final int quantity) {
 		return itemManager.getItemPrice(itemId) * (long) quantity;
 	}
 }

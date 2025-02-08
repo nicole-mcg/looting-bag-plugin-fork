@@ -1,4 +1,4 @@
-package com.lootingbag;
+package com.lootingbag.handlers.pickup;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -24,7 +24,7 @@ public class PickupAction
 	@Setter
 	private int quantity;
 
-	public PickupAction(int itemId, @NonNull WorldPoint worldPoint) {
+	public PickupAction(final int itemId, @NonNull final WorldPoint worldPoint) {
 		this.itemId = itemId;
 		this.worldPoint = worldPoint;
 	}
@@ -33,7 +33,7 @@ public class PickupAction
 		ticksSincePickup++;
 	}
 
-	public boolean matchesItemDespawnEvent(ItemDespawned event) {
+	public boolean matchesItemDespawnEvent(final ItemDespawned event) {
 		return event.getTile().getWorldLocation().equals(worldPoint)
 			&& event.getItem().getId() == itemId;
 	}
