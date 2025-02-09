@@ -62,17 +62,15 @@ public class LootingBag
 		isQuantityOfItemsAccurate = true;
 	}
 
-	public void addItem(
-		final int itemId,
-		final int quantity
-	) {
+	public void addItem(final int itemId, final int quantity) {
 		addItem(itemId, quantity, true);
 	}
 
 	public void addItem(
-            final int itemId,
-            final int quantity,
-            final boolean isQuantityConfirmed) {
+		final int itemId,
+		final int quantity,
+		final boolean isQuantityConfirmed
+	) {
 
 		// Check that we can deposit any item into looting bag
 		// 		E.g. We're in the wilderness
@@ -106,13 +104,16 @@ public class LootingBag
 
 	public int getFreeSlots()
 	{
-		return LOOTING_BAG_SIZE -
-			items.keySet().stream()
-				.mapToInt(itemId ->
-					itemManager.getItemComposition(itemId).isStackable()
-						? 1
-						: items.get(itemId)
-				).sum();
+		final int numFilledLootingBagSlots = items
+			.keySet()
+			.stream()
+			.mapToInt(itemId ->
+				itemManager.getItemComposition(itemId).isStackable()
+					? 1
+					: items.get(itemId)
+			).sum();
+
+		return LOOTING_BAG_SIZE - numFilledLootingBagSlots;
 	}
 
 	public void syncItems(final ItemContainer lootingBagContainer) {
@@ -135,7 +136,9 @@ public class LootingBag
 				(map1, map2) -> {
 					map1.putAll(map2);
 					return map1;
-				}));
+				}
+			)
+		);
 
 		calculateValueOfItems();
 		isQuantityOfItemsAccurate = true;
