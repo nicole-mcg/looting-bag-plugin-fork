@@ -43,6 +43,18 @@ public class LootingBag
 	@Getter
 	private long valueOfItems = 0;
 
+	private String lastPlayerName;
+
+	public void onLogin() {
+		// Clear items if the player has changed
+		if (lastPlayerName != null && !lastPlayerName.equals(client.getLocalPlayer().getName())) {
+			clearItems();
+			isSynced = false;
+		}
+
+		lastPlayerName = client.getLocalPlayer().getName();
+	}
+
 	public void addItem(
 		final int itemId,
 		final int quantity

@@ -46,4 +46,8 @@ public class InventoryTracker {
     public int getNumAddedToInventory(final int itemId) {
         return lastItemUpdates.getOrDefault(itemId, 0);
     }
+
+    public boolean wasAddedToInventory(final int itemId) {
+        return lastItemUpdates.getOrDefault(itemId, 0) > 0;
+    }
 }

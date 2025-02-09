@@ -67,6 +67,8 @@ public class LootingBagPlugin extends Plugin
 	@Inject
 	private Gson gson;
 
+	private boolean isLoggingIn = false;
+
 	@Provides
 	LootingBagPluginConfig provideConfig(final ConfigManager configManager) {
 		return configManager.getConfig(LootingBagPluginConfig.class);
@@ -86,8 +88,22 @@ public class LootingBagPlugin extends Plugin
 	}
 
 	@Subscribe
+	public void onGameStateChanged(final GameStateChanged event)
+	{
+		if (event.getGameState() == GameState.LOGGING_IN)
+		{
+			isLoggingIn = true;
+		}
+	}
+
+	@Subscribe
 	public void onGameTick(final GameTick gameTick)
 	{
+		if (isLoggingIn) {
+			isLoggingIn = false;
+			lootingBag.onLogin();
+		}
+
 		pickupHandler.processPossibleSuppliesPickupActions();
 		lootingBagDialogTracker.onGameTick();
 	}
