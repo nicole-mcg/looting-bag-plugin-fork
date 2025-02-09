@@ -196,6 +196,13 @@ public class LootingBagPlugin extends Plugin
 	private void handleInventoryUpdated(final ItemContainer inventory) {
 		inventoryTracker.updateInventoryItems(inventory);
 
+		final boolean isLootingBagAdded = inventoryTracker.wasAddedToInventory(ItemID.LOOTING_BAG)
+			|| inventoryTracker.wasAddedToInventory(ItemID.LOOTING_BAG_22586);
+		final boolean isBankOpen = client.getItemContainer(InventoryID.BANK) != null;
+		if (isLootingBagAdded && !isBankOpen) {
+			lootingBag.clearItems();
+		}
+
 		pickupHandler.onInventoryUpdated();
 	}
 

@@ -55,6 +55,13 @@ public class LootingBag
 		lastPlayerName = client.getLocalPlayer().getName();
 	}
 
+	public void clearItems() {
+		items.clear();
+		valueOfItems = 0;
+		isSynced = true;
+		isQuantityOfItemsAccurate = true;
+	}
+
 	public void addItem(
 		final int itemId,
 		final int quantity
