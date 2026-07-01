@@ -2,6 +2,7 @@ package com.lootingbag.handlers;
 
 import com.google.common.collect.ImmutableSet;
 import com.lootingbag.lootingbagcontainer.LootingBag;
+import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.InventoryID;
 import net.runelite.api.ItemContainer;
@@ -16,8 +17,12 @@ import java.util.regex.Pattern;
 
 import static net.runelite.api.ItemID.*;
 
+@Slf4j
 @Singleton
 public class WildernessAgilityDispenserHandler {
+    private static final Pattern COLOR_TAG_MATCHER = Pattern.compile("<[A-Za-z0-9=/]+>");
+
+    // Regex patterns for wilderness agility dispenser messages
     private static final Pattern DISPENSER_MESSAGE_REGEX = Pattern.compile("You have been awarded <[A-Za-z0-9=/]+>(\\d+) x ([ a-zA-Z(4)]+)<[A-Za-z0-9=/]+> and <[A-Za-z0-9=/]+>(\\d+) x ([ a-zA-Z]+)<[A-Za-z0-9=/]+> from the Agility dispenser.");
     private static final Pattern DISPENSER_MESSAGE_EXTRA_REGEX = Pattern.compile("You have been awarded <[A-Za-z0-9=/]+>(\\d+) x ([ a-zA-Z(4)]+)<[A-Za-z0-9=/]+> and <[A-Za-z0-9=/]+>(\\d+) x ([ a-zA-Z]+)<[A-Za-z0-9=/]+>, and an extra <[A-Za-z0-9=/]+>[ a-zA-Z(4)]+<[A-Za-z0-9=/]+> from the Agility dispenser.");
 
@@ -33,10 +38,12 @@ public class WildernessAgilityDispenserHandler {
     private final HashMap<String, Integer> nameToItemId = new HashMap<>();
 
     // Items from https://oldschool.runescape.wiki/w/Agility_dispenser
-    static final ImmutableSet<Integer> ITEM_IDS = ImmutableSet.of(
+    private static final ImmutableSet<Integer> ITEM_IDS = ImmutableSet.of(
         // All Laps
         BLIGHTED_ANGLERFISH, BLIGHTED_MANTA_RAY, BLIGHTED_KARAMBWAN, BLIGHTED_SUPER_RESTORE4,
-        MITHRIL_PLATESKIRT, MITHRIL_PLATELEGS, ADAMANT_PLATEBODY, RUNE_MED_HELM, ADAMANT_FULL_HELM, ADAMANT_PLATELEGS,
+        MITHRIL_PLATESKIRT, MITHRIL_PLATELEGS,
+        ADAMANT_PLATEBODY, ADAMANT_FULL_HELM, ADAMANT_PLATELEGS,
+        RUNE_MED_HELM,
 
         // Laps 1-15
         STEEL_PLATEBODY,
@@ -49,8 +56,10 @@ public class WildernessAgilityDispenserHandler {
     );
 
     public void onGameMessage(final String message) {
-        final Matcher defaultMatcher = DISPENSER_MESSAGE_REGEX.matcher(message);
-        final Matcher extraMatcher = DISPENSER_MESSAGE_EXTRA_REGEX.matcher(message);
+        final String cleanedMessage = message; //COLOR_TAG_MATCHER.matcher(message).replaceAll("");
+
+        final Matcher defaultMatcher = DISPENSER_MESSAGE_REGEX.matcher(cleanedMessage);
+        final Matcher extraMatcher = DISPENSER_MESSAGE_EXTRA_REGEX.matcher(cleanedMessage);
         final boolean matches = defaultMatcher.matches() || extraMatcher.matches();
         if (!matches) {
             return;
@@ -60,9 +69,9 @@ public class WildernessAgilityDispenserHandler {
         final Matcher matcher = defaultMatcher.matches() ? defaultMatcher : extraMatcher;
 
         final int quantity = Integer.parseInt(matcher.group(1));
-        final String item = extraMatcher.group(2);
-        final int quantity2 = Integer.parseInt(extraMatcher.group(3));
-        final String item2 = extraMatcher.group(4);
+        final String item = matcher.group(2);
+        final int quantity2 = Integer.parseInt(matcher.group(3));
+        final String item2 = matcher.group(4);
 
         addWildernessItems(quantity, item, quantity2, item2);
     }
@@ -75,8 +84,14 @@ public class WildernessAgilityDispenserHandler {
             }
         }
 
+        Integer itemId = nameToItemId.get(name);
+        if (itemId == null) {
+            log.error("Item ID not found for item name: {}", name);
+            return null;
+        }
+
         // All wilderness agility items noted so get noted version
-        return itemManager.getItemComposition(nameToItemId.get(name)).getLinkedNoteId();
+        return itemManager.getItemComposition(itemId).getLinkedNoteId();
     }
 
     private void addWildernessItems(final int quantity, final String itemName, final int quantity2, final String itemName2) {
@@ -86,10 +101,15 @@ public class WildernessAgilityDispenserHandler {
             return;
         }
 
-        final int itemId = nameToItemId(itemName);
-        final int itemId2 = nameToItemId(itemName2);
+        final Integer itemId = nameToItemId(itemName);
+        final Integer itemId2 = nameToItemId(itemName2);
 
-        lootingBag.addItem(itemId, quantity);
-        lootingBag.addItem(itemId2, quantity2);
+        if (itemId != null) {
+            lootingBag.addItem(itemId, quantity);
+        }
+
+        if (itemId2 != null) {
+            lootingBag.addItem(itemId2, quantity2);
+        }
     }
 }

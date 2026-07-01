@@ -33,7 +33,7 @@ public class PickupAction
 		ticksSincePickup++;
 	}
 
-	public boolean matchesItemDespawnEvent(final ItemDespawned event) {
+	public boolean matchesItemDespawnedEvent(final ItemDespawned event) {
 		return event.getTile().getWorldLocation().equals(worldPoint)
 			&& event.getItem().getId() == itemId;
 	}

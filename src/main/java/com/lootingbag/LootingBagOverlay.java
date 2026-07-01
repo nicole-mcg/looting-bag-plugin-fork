@@ -4,6 +4,7 @@ import com.google.inject.Inject;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.math.BigInteger;
 
 import com.lootingbag.lootingbagcontainer.LootingBag;
 import net.runelite.api.ItemID;
@@ -70,17 +71,23 @@ public class LootingBagOverlay extends WidgetItemOverlay
 			return "Check";
 		}
 
-		final long lootingBagValue = lootingBag.getValueOfItems();
+		final BigInteger lootingBagValue = lootingBag.getValueOfItems();
 		final String text = lootingBag.isQuantityOfItemsAccurate() ? "" : ">";
-		if (lootingBagValue >= 10_000_000)
-		{
-			return text + lootingBagValue / 1_000_000 + "M";
-		}
 
-		if (lootingBagValue >= 100_000)
-		{
-			return text + lootingBagValue / 1000 + "k";
-		}
+        if (lootingBagValue.compareTo(BigInteger.valueOf(1_000_000_000)) >= 0)
+        {
+            return text + lootingBagValue.divide(BigInteger.valueOf(1_000_000_000)) + "B";
+        }
+
+        if (lootingBagValue.compareTo(BigInteger.valueOf(1_000_000)) >= 0)
+        {
+            return text + lootingBagValue.divide(BigInteger.valueOf(1_000_000)) + "M";
+        }
+
+        if (lootingBagValue.compareTo(BigInteger.valueOf(100_000)) >= 0)
+        {
+            return text + lootingBagValue.divide(BigInteger.valueOf(1_000)) + "k";
+        }
 
 		return text + lootingBagValue;
 	}

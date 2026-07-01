@@ -27,7 +27,8 @@ public class InventoryTracker {
                 Arrays.stream(lastInventoryItems),
                 Arrays.stream(nextInventoryItems)
             )
-            .mapToInt(Item::getId);
+            .mapToInt(Item::getId)
+            .distinct();
 
         allItemIds.forEach(itemId -> {
             final int lastCount = Arrays.stream(lastInventoryItems)

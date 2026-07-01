@@ -1,5 +1,6 @@
 package com.lootingbag.handlers.useitem;
 
+import com.lootingbag.lootingbagcontainer.LootingBagSettings;
 import com.lootingbag.state.InventoryTracker;
 import com.lootingbag.lootingbagcontainer.LootingBag;
 import com.lootingbag.handlers.useitem.optionsdialog.AmountDialogOption;
@@ -24,6 +25,9 @@ public class UseItemHandler implements ILootingBagDialogListener {
     private LootingBag lootingBag;
 
     @Inject
+    private LootingBagSettings lootingBagSettings;
+
+    @Inject
     private InventoryTracker inventoryTracker;
 
     @Inject
@@ -43,8 +47,14 @@ public class UseItemHandler implements ILootingBagDialogListener {
             return;
         }
 
-        final int amount = inventory.count(itemId);
-        if (amount == 1)
+        final int amountInInventory = inventory.count(itemId);
+        if (lootingBagSettings.useItemDepositsAll()) {
+            lootingBag.addItem(itemId, amountInInventory);
+            return;
+        }
+
+        // If there's only 1 then it doesn't need to ask for an amount
+        if (amountInInventory == 1)
         {
             lootingBag.addItem(itemId, 1);
             return;
@@ -92,4 +102,5 @@ public class UseItemHandler implements ILootingBagDialogListener {
         lootingBag.addItem(itemId, quantity);
         lastItemIdUsedOnLootingBag = null;
     }
+
 }

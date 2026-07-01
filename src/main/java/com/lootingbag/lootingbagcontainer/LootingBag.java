@@ -1,18 +1,15 @@
 package com.lootingbag.lootingbagcontainer;
 
 import com.google.common.collect.ImmutableSet;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+
+import java.math.BigInteger;
+import java.util.*;
+import java.util.stream.IntStream;
 
 import com.lootingbag.constants.GeUntradables;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.Client;
-import net.runelite.api.ItemComposition;
-import net.runelite.api.ItemContainer;
-import net.runelite.api.Varbits;
+import net.runelite.api.*;
 import net.runelite.client.game.ItemManager;
 
 import com.google.inject.Inject;
@@ -22,9 +19,9 @@ import javax.inject.Singleton;
 @Singleton
 public class LootingBag
 {
-	private static final int LOOTING_BAG_SIZE = 28;
+	public static final int LOOTING_BAG_SIZE = 28;
 
-	private static final Set<Integer> FEROX_REGION = ImmutableSet.of(12600, 12344);
+	public static final Set<Integer> FEROX_REGION = ImmutableSet.of(12600, 12344);
 
 	@Inject
 	private Client client;
@@ -32,16 +29,16 @@ public class LootingBag
 	@Inject
 	private ItemManager itemManager;
 
-	private final Map<Integer, Integer> items = new HashMap<>();
+	private final ArrayList<Item> items = new ArrayList<>();
 
 	@Getter
 	private boolean isSynced = false;
 
 	@Getter
-	private boolean isQuantityOfItemsAccurate = true;
+    private boolean isQuantityOfItemsAccurate = true;
 
 	@Getter
-	private long valueOfItems = 0;
+	private BigInteger valueOfItems = BigInteger.ZERO;
 
 	private String lastPlayerName;
 
@@ -57,7 +54,7 @@ public class LootingBag
 
 	public void clearItems() {
 		items.clear();
-		valueOfItems = 0;
+		valueOfItems = BigInteger.valueOf(0);
 		isSynced = true;
 		isQuantityOfItemsAccurate = true;
 	}
@@ -71,7 +68,6 @@ public class LootingBag
 		final int quantity,
 		final boolean isQuantityConfirmed
 	) {
-
 		// Check that we can deposit any item into looting bag
 		// 		E.g. We're in the wilderness
 		if (!canDepositItems()) {
@@ -81,15 +77,16 @@ public class LootingBag
 		// Check that the item can go in the looting bag
 		//		E.g. It's tradeable
 		if (!canItemGoInLootingBag(itemId)) {
-			log.debug("Item can not go in looting bag: " + itemManager.getItemComposition(itemId).getName());
+            log.debug("Item can not go in looting bag: {}", itemManager.getItemComposition(itemId).getName());
 			return;
 		}
 
 		final ItemComposition itemComposition = itemManager.getItemComposition(itemId);
 
 		// Check that we have room in the looting bag
-		if (getFreeSlots() == 0
-				&& (!itemComposition.isStackable() || !items.containsKey(itemId))) {
+        final int existingStackIndex = getItemIndex(itemId);
+        final boolean canJoinStack = itemComposition.isStackable() && existingStackIndex != -1;
+		if (getFreeSlots() == 0 && !canJoinStack) {
 			return;
 		}
 
@@ -97,24 +94,26 @@ public class LootingBag
 			isQuantityOfItemsAccurate = false;
 		}
 
-		log.debug("Successfully added item to looting bag: " + itemComposition.getName() + "x" + quantity);
-		items.merge(itemId, quantity, Integer::sum);
-		calculateValueOfItems();
+        // If the item isn't stackable, or we don't have a stack of it, add a new item
+        if (existingStackIndex == -1) {
+            items.add(new Item(itemId, quantity));
+            return;
+        }
+
+        // Add item to the existing stack
+        final Item existingStack = items.get(existingStackIndex);
+        final Item newStack = new Item(itemId, quantity + existingStack.getQuantity());
+        items.set(existingStackIndex, newStack);
 	}
 
 	public int getFreeSlots()
 	{
-		final int numFilledLootingBagSlots = items
-			.keySet()
-			.stream()
-			.mapToInt(itemId ->
-				itemManager.getItemComposition(itemId).isStackable()
-					? 1
-					: items.get(itemId)
-			).sum();
-
-		return LOOTING_BAG_SIZE - numFilledLootingBagSlots;
+        return LOOTING_BAG_SIZE - items.size();
 	}
+
+    public Item[] getItems() {
+        return items.toArray(new Item[0]);
+    }
 
 	public void syncItems(final ItemContainer lootingBagContainer) {
 		items.clear();
@@ -126,24 +125,20 @@ public class LootingBag
 			return;
 		}
 
-		items.putAll(Arrays.stream(lootingBagContainer.getItems())
-			.reduce(
-				new HashMap<>(),
-				(map, item) -> {
-					map.merge(item.getId(), item.getQuantity(), Integer::sum);
-					return map;
-				},
-				(map1, map2) -> {
-					map1.putAll(map2);
-					return map1;
-				}
-			)
-		);
+        List<Item> itemList = Arrays.asList(lootingBagContainer.getItems());
+		items.addAll(itemList);
 
 		calculateValueOfItems();
 		isQuantityOfItemsAccurate = true;
 		isSynced = true;
 	}
+
+    private int getItemIndex(final int itemId) {
+        return IntStream.range(0, items.size())
+            .filter(i -> items.get(i).getId() == itemId)
+            .findFirst()
+            .orElse(-1);
+    }
 
 	private boolean canItemGoInLootingBag(final int itemId) {
 		return isItemTradeable(itemId)
@@ -151,6 +146,10 @@ public class LootingBag
 	}
 
 	private boolean isItemTradeable(final int itemId) {
+        if (itemId == -1) {
+            return false;
+        }
+
 		final ItemComposition itemComposition = itemManager.getItemComposition(itemId);
 
 		return itemComposition.isTradeable() // GE tradeable items
@@ -165,12 +164,21 @@ public class LootingBag
 	}
 
 	private void calculateValueOfItems() {
-		valueOfItems = items.keySet().stream()
-			.mapToLong(itemId -> getPriceOfItem(itemId, items.get(itemId)))
-			.sum();
+		valueOfItems = items.stream()
+            .reduce(
+                BigInteger.ZERO,
+                (sum, item) -> {
+                    final int itemId = item.getId();
+                    final int quantity = item.getQuantity();
+
+                    final long price = getPriceOfItem(itemId, quantity);
+                    return sum.add(BigInteger.valueOf(price));
+                },
+                BigInteger::add
+            );
 	}
 
 	private long getPriceOfItem(final int itemId, final int quantity) {
-		return itemManager.getItemPrice(itemId) * (long) quantity;
+		return (long) itemManager.getItemPrice(itemId) * quantity;
 	}
 }

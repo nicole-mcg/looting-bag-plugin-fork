@@ -139,7 +139,7 @@ public class LootingBagDialogTracker {
 
         final NumberInputChangeCode[] changeCodes = NumberInputChangeCode.values();
         final boolean isAnyFirstCode = Arrays.stream(changeCodes)
-                .anyMatch(code -> code.firstCodeMatches(changeCode));
+            .anyMatch(code -> code.firstCodeMatches(changeCode));
 
         // If we don't have a lastNumberInputChangeCode, we can't determine if this is an open or close event
         if (lastNumberInputChangeCode == null) {

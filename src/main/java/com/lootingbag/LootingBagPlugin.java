@@ -4,8 +4,8 @@ import com.google.gson.Gson;
 import com.google.inject.Provides;
 import com.google.inject.Inject;
 
-import com.lootingbag.handlers.pickup.PickupHandler;
-import com.lootingbag.handlers.TelegrabHandler;
+import com.lootingbag.handlers.pickup.PickupItemHandler;
+import com.lootingbag.handlers.pickup.TelegrabHandler;
 import com.lootingbag.handlers.useitem.UseItemHandler;
 import com.lootingbag.handlers.WildernessAgilityDispenserHandler;
 import com.lootingbag.lootingbagcontainer.LootingBag;
@@ -56,7 +56,7 @@ public class LootingBagPlugin extends Plugin
 	private TelegrabHandler telegrabHandler;
 
 	@Inject
-	private PickupHandler pickupHandler;
+	private PickupItemHandler pickupItemHandler;
 
 	@Inject
 	private UseItemHandler useItemHandler;
@@ -70,19 +70,19 @@ public class LootingBagPlugin extends Plugin
 	private boolean isLoggingIn = false;
 
 	@Provides
-	LootingBagPluginConfig provideConfig(final ConfigManager configManager) {
+	public LootingBagPluginConfig provideConfig(final ConfigManager configManager) {
 		return configManager.getConfig(LootingBagPluginConfig.class);
 	}
 
 	@Override
-	protected void startUp()
+	public void startUp()
 	{
 		useItemHandler.initialize();
 		overlayManager.add(overlay);
 	}
 
 	@Override
-	protected void shutDown()
+	public void shutDown()
 	{
 		overlayManager.remove(overlay);
 	}
@@ -104,7 +104,7 @@ public class LootingBagPlugin extends Plugin
 			lootingBag.onLogin();
 		}
 
-		pickupHandler.processPossibleSuppliesPickupActions();
+		pickupItemHandler.processPossibleSuppliesPickupActions();
 		lootingBagDialogTracker.onGameTick();
 	}
 
@@ -151,14 +151,14 @@ public class LootingBagPlugin extends Plugin
 		}
 
 		final boolean isTelegrab = telegrabHandler.isTelegrabMenuOption(event);
-		final boolean isTakeItemOffGround = pickupHandler.isPickupMenuOption(event);
+		final boolean isTakeItemOffGround = pickupItemHandler.isPickupMenuOption(event);
 
 		// Take an item off the ground, or telegrab
 		if (!isTakeItemOffGround && !isTelegrab) {
 			return;
 		}
 
-		pickupHandler.onTakeItemClicked(event);
+		pickupItemHandler.onTakeItemClicked(event);
 	}
 
 	@Subscribe
@@ -168,7 +168,7 @@ public class LootingBagPlugin extends Plugin
 
 	@Subscribe
 	public void onItemDespawned(final ItemDespawned event) {
-		pickupHandler.onItemDespawned(event);
+		pickupItemHandler.onItemDespawned(event);
 	}
 
 	@Subscribe
@@ -178,7 +178,7 @@ public class LootingBagPlugin extends Plugin
 
 	@Subscribe
 	public void onVarClientIntChanged(final VarClientIntChanged event) {
-	 	lootingBagDialogTracker.onVarClientIntChanged(event);
+        lootingBagDialogTracker.onVarClientIntChanged(event);
 	}
 
 	@Subscribe
@@ -203,7 +203,7 @@ public class LootingBagPlugin extends Plugin
 			lootingBag.clearItems();
 		}
 
-		pickupHandler.onInventoryUpdated();
+		pickupItemHandler.onInventoryUpdated();
 	}
 
 	private void handleItemUsedOnItem(final int itemId1, final int itemId2) {
